@@ -13,6 +13,22 @@ index 1a6163eb4..88f3b8d04 100644
      /**
       * Detects whether or not remove from current parent and adding to new parent requires call of
       * removeNotify on the component. Since removeNotify destroys native window this might (not)
+diff --git a/src/java.desktop/share/classes/javax/swing/JTextArea.java b/src/java.desktop/share/classes/javax/swing/JTextArea.java
+index d64fa0272..ccf7dceca 100644
+--- a/src/java.desktop/share/classes/javax/swing/JTextArea.java
++++ b/src/java.desktop/share/classes/javax/swing/JTextArea.java
+@@ -547,7 +547,10 @@ public class JTextArea extends JTextComponent {
+         }
+         return rowHeight;
+     }
+-
++    
++    public FontMetrics getFontMetrics() {
++        return getFontMetrics(getFont());
++    }
+     /**
+      * Returns the number of columns in the TextArea.
+      *
 diff --git a/src/java.desktop/share/classes/javax/swing/JTextField.java b/src/java.desktop/share/classes/javax/swing/JTextField.java
 index b8e3ffe06..3bfe3cae1 100644
 --- a/src/java.desktop/share/classes/javax/swing/JTextField.java
@@ -154,10 +170,10 @@ index ad9d71be7..3d437ae8a 100644
       * Activates the current input method of this input context, and grabs
       * the composition area for use by this input context.
 diff --git a/src/java.desktop/unix/classes/sun/awt/X11/XInputMethod.java b/src/java.desktop/unix/classes/sun/awt/X11/XInputMethod.java
-index 07c1334b8..86420998c 100644
+index 07c1334b8..01d5910de 100644
 --- a/src/java.desktop/unix/classes/sun/awt/X11/XInputMethod.java
 +++ b/src/java.desktop/unix/classes/sun/awt/X11/XInputMethod.java
-@@ -28,15 +28,25 @@ package sun.awt.X11;
+@@ -28,15 +28,27 @@ package sun.awt.X11;
  import java.awt.AWTException;
  import java.awt.Component;
  import java.awt.Container;
@@ -172,6 +188,8 @@ index 07c1334b8..86420998c 100644
 +import java.lang.reflect.InvocationTargetException;
 +import java.lang.reflect.Method;
 +
++import javax.swing.JTextArea;
++import javax.swing.JTextField;
 +import javax.swing.text.JTextComponent;
 +
  import sun.awt.AWTAccessor;
@@ -183,7 +201,7 @@ index 07c1334b8..86420998c 100644
  /**
   * Input Method Adapter for XIM (without Motif)
   *
-@@ -83,8 +93,20 @@ public class XInputMethod extends X11InputMethod {
+@@ -83,8 +95,20 @@ public class XInputMethod extends X11InputMethod {
              return 0;
          return releaseXICNative(pData);
      }
@@ -205,7 +223,7 @@ index 07c1334b8..86420998c 100644
  
      protected void setXICFocus(ComponentPeer peer,
                                      boolean value, boolean active) {
-@@ -92,9 +114,11 @@ public class XInputMethod extends X11InputMethod {
+@@ -92,9 +116,11 @@ public class XInputMethod extends X11InputMethod {
              return;
          }
          xicFocus = ((XComponentPeer)peer).getContentWindow();
@@ -218,7 +236,7 @@ index 07c1334b8..86420998c 100644
      }
  
      public static long getXICFocus() {
-@@ -156,6 +180,73 @@ public class XInputMethod extends X11InputMethod {
+@@ -156,6 +182,71 @@ public class XInputMethod extends X11InputMethod {
          return peer.getContentWindow();
      }
  
@@ -233,18 +251,16 @@ index 07c1334b8..86420998c 100644
 +                int font_height = 0;
 +                int caret_x = 0;
 +                int caret_y = 0;
-+                try{
++                if(this.awtFocussedComponent instanceof JTextArea || this.awtFocussedComponent instanceof JTextField){
 +                    method_getFontMetrics = this.awtFocussedComponent.getClass().getMethod("getFontMetrics");
 +                    font_metrics = (FontMetrics)method_getFontMetrics.invoke(this.awtFocussedComponent);
++                    font_height = font_metrics.getHeight();
 +                    JTextComponent jc = (JTextComponent)this.awtFocussedComponent;
 +                    if( jc.getCaret().getMagicCaretPosition() != null) {
 +                        caret_x = jc.getCaret().getMagicCaretPosition().x;
 +                        caret_y = jc.getCaret().getMagicCaretPosition().y;
 +                    }
-+                    font_height = font_metrics.getHeight();
-+
-+                }catch (NoSuchMethodException e) {
-+
++                }else {
 +                    method_getEditor = this.awtFocussedComponent.getClass().getMethod("getEditor");
 +
 +                    editor = method_getEditor.invoke(this.awtFocussedComponent);
